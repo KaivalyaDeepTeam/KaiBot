@@ -200,12 +200,13 @@ class Paraphraser:
         style = style or self.current_style
         system_prompt = SYSTEM_PROMPTS.get(style, SYSTEM_PROMPTS["default"])
 
-        # Construct the prompt (without <s> as llama.cpp adds it automatically)
-        prompt = f"""[INST] {system_prompt}
-
-Text to paraphrase:
-{text.strip()}
-[/INST]"""
+        # Construct the prompt using Qwen ChatML format
+        prompt = f"""<|im_start|>system
+{system_prompt}<|im_end|>
+<|im_start|>user
+{text.strip()}<|im_end|>
+<|im_start|>assistant
+"""
 
         try:
             if progress_callback:
@@ -224,7 +225,7 @@ Text to paraphrase:
                 top_p=self.config.top_p,
                 top_k=self.config.top_k,
                 repeat_penalty=self.config.repeat_penalty,
-                stop=["</s>", "[INST]", "\n\nReferences:", "\n\nSources:", "\n\n["],
+                stop=["<|im_end|>", "<|im_start|>", "\n\nReferences:", "\n\nSources:", "\n\n["],
                 echo=False
             )
 

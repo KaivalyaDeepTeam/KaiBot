@@ -6,7 +6,7 @@ A powerful macOS desktop application that humanizes AI-generated text and paraph
 
 - **Text Humanizer** - Paste text and get human-like output instantly (like Copyleaks AI Humanizer)
 - **PDF Paraphraser** - Process entire PDFs while preserving layout
-- **Local LLM Processing** - Uses Mistral 7B via llama.cpp (no cloud API, 100% private)
+- **Local LLM Processing** - Uses Qwen 2.5 7B via llama.cpp (no cloud API, 100% private)
 - **Multiple Styles** - Default, Academic, Casual, and Technical modes
 - **GPU Acceleration** - Metal support on Apple Silicon Macs
 - **Copy to Clipboard** - One-click copy for humanized text
@@ -17,7 +17,7 @@ A powerful macOS desktop application that humanizes AI-generated text and paraph
 
 - macOS 11.0+
 - Python 3.9+
-- ~8GB RAM (for Mistral 7B model)
+- ~8GB RAM (for Qwen 2.5 7B model)
 
 ## Installation
 
@@ -34,10 +34,10 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-3. Download Mistral 7B model:
+3. Download Qwen 2.5 7B model:
 ```bash
 pip install huggingface-hub
-huggingface-cli download TheBloke/Mistral-7B-Instruct-v0.2-GGUF mistral-7b-instruct-v0.2.Q5_K_M.gguf --local-dir models
+huggingface-cli download Qwen/Qwen2.5-7B-Instruct-GGUF qwen2.5-7b-instruct-q5_k_m.gguf --local-dir models
 ```
 
 ## Usage

@@ -205,10 +205,13 @@ class Humanizer:
         # Choose a random prompt for variety
         prompt_template = random.choice(PARAGRAPH_PROMPTS)
 
-        prompt = f"""[INST] {prompt_template}
-
-{paragraph}
-[/INST]"""
+        # Use Qwen ChatML format
+        prompt = f"""<|im_start|>system
+{prompt_template}<|im_end|>
+<|im_start|>user
+{paragraph}<|im_end|>
+<|im_start|>assistant
+"""
 
         # Use slightly different settings each time for variance
         temp_variance = random.uniform(-0.1, 0.1)
@@ -220,7 +223,7 @@ class Humanizer:
             top_p=self.config.top_p,
             top_k=self.config.top_k,
             repeat_penalty=self.config.repeat_penalty,
-            stop=["</s>", "[INST]", "\n\nReferences:", "\n\nSources:"],
+            stop=["<|im_end|>", "<|im_start|>", "\n\nReferences:", "\n\nSources:"],
             echo=False
         )
 
