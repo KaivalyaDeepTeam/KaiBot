@@ -347,6 +347,7 @@ class MainWindow(QMainWindow):
         self.model_worker = ModelLoaderWorker(self.paraphraser, model_path)
         self.model_worker.progress.connect(self._on_model_progress)
         self.model_worker.finished.connect(self._on_model_loaded)
+        self.model_worker.finished.connect(lambda: self._cleanup_finished_worker('model'))
         self.model_worker.start()
 
     def _on_model_progress(self, message: str):
@@ -418,6 +419,7 @@ class MainWindow(QMainWindow):
         self.current_worker.progress.connect(self._on_progress)
         self.current_worker.stage_changed.connect(self._on_stage_changed)
         self.current_worker.finished.connect(self._on_processing_finished)
+        self.current_worker.finished.connect(lambda: self._cleanup_finished_worker('current'))
         self.current_worker.start()
 
     def cancel_processing(self):
@@ -471,6 +473,17 @@ class MainWindow(QMainWindow):
             # Settings were saved
             pass
 
+    def _cleanup_finished_worker(self, worker_type: str):
+        """Clean up a finished worker thread."""
+        if worker_type == 'model' and self.model_worker:
+            if not self.model_worker.isRunning():
+                self.model_worker.deleteLater()
+                self.model_worker = None
+        elif worker_type == 'current' and self.current_worker:
+            if not self.current_worker.isRunning():
+                self.current_worker.deleteLater()
+                self.current_worker = None
+
     def closeEvent(self, event):
         """Handle window close."""
         # Check if any worker is running
@@ -491,16 +504,35 @@ class MainWindow(QMainWindow):
                 event.ignore()
                 return
 
-            # Cancel and wait for workers
-            if self.current_worker and self.current_worker.isRunning():
-                self.current_worker.cancel()
-                self.current_worker.wait(5000)
+        # Stop and cleanup all workers
+        self._cleanup_workers()
 
-            if self.model_worker and self.model_worker.isRunning():
-                self.model_worker.wait(5000)
-
-        # Cleanup
+        # Cleanup resources
         self.paraphraser.unload_model()
         self.pdf_processor.close()
 
         event.accept()
+
+    def _cleanup_workers(self):
+        """Safely stop and cleanup all worker threads."""
+        # Cancel current worker if running
+        if self.current_worker:
+            if self.current_worker.isRunning():
+                if hasattr(self.current_worker, 'cancel'):
+                    self.current_worker.cancel()
+                self.current_worker.quit()
+                self.current_worker.wait(3000)
+                if self.current_worker.isRunning():
+                    self.current_worker.terminate()
+                    self.current_worker.wait(1000)
+            self.current_worker = None
+
+        # Wait for model worker if running
+        if self.model_worker:
+            if self.model_worker.isRunning():
+                self.model_worker.quit()
+                self.model_worker.wait(3000)
+                if self.model_worker.isRunning():
+                    self.model_worker.terminate()
+                    self.model_worker.wait(1000)
+            self.model_worker = None
