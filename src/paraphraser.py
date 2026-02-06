@@ -20,72 +20,63 @@ class ParaphraserConfig:
     n_ctx: int = 4096  # Context window
     n_threads: int = 4  # CPU threads
     n_gpu_layers: int = 0  # GPU layers (Metal on Mac)
-    temperature: float = 0.9  # Higher for more human-like variation
-    top_p: float = 0.92
-    top_k: int = 50
-    repeat_penalty: float = 1.15  # Slightly higher to avoid repetition
-    max_tokens: int = 1024
+    temperature: float = 0.7  # Balanced for natural but controlled output
+    top_p: float = 0.9
+    top_k: int = 40
+    repeat_penalty: float = 1.1
+    max_tokens: int = 512  # Limit output length to prevent rambling
 
 
 # System prompts optimized to bypass AI detection (Copyleaks, ZeroGPT, etc.)
 SYSTEM_PROMPTS = {
-    "default": """Rewrite this text as a real human would write it. You must:
+    "default": """Rewrite the following text in your own words. Keep the same meaning but change how it's written.
 
-1. VARY sentence length dramatically - use some very short sentences. Then use longer ones. Mix it up unpredictably.
-2. Use contractions naturally: don't, won't, it's, that's, wouldn't, couldn't
-3. Start some sentences with "And", "But", "So", "Well", "Now" - humans do this
-4. Use casual transitions: "thing is", "basically", "honestly", "actually", "anyway"
-5. Add slight redundancy occasionally - humans repeat ideas differently
-6. Use simpler words: "use" not "utilize", "help" not "assist", "show" not "demonstrate"
-7. Break grammar rules slightly: fragment sentences sometimes. Like this.
-8. Vary paragraph length - some short, some longer
-9. Keep all facts, names, numbers exactly the same
+Rules:
+- Keep the SAME length (similar word count)
+- Keep ALL facts, names, numbers, and details exactly
+- Mix short and long sentences naturally
+- Use contractions sometimes (don't, it's, won't)
+- Use simple everyday words
+- DO NOT add any new information
+- DO NOT add citations or references
+- DO NOT add explanations or commentary
+- DO NOT start with phrases like "Here is" or "The text"
 
-DO NOT:
-- Use overly formal or perfect language
-- Make every sentence the same length
-- Use fancy vocabulary unnecessarily
-- Add phrases like "Here is" or "The following"
+Just output the rewritten text directly.""",
 
-Output ONLY the rewritten text, nothing else.""",
+    "academic": """Rewrite this text academically but naturally. Keep exact same meaning and length.
 
-    "academic": """Rewrite this academic text naturally while keeping scholarly tone. You must:
+Rules:
+- Preserve all facts, terms, and details exactly
+- Keep similar word count to original
+- Vary sentence structure naturally
+- DO NOT add citations, references, or sources
+- DO NOT add new information
+- DO NOT add commentary
 
-1. Preserve all citations, references, and technical terms exactly
-2. Vary sentence structures - mix complex and simple sentences
-3. Use some passive voice but also active voice naturally
-4. Occasionally start with transitions: "However,", "Moreover,", "Additionally,"
-5. Keep discipline-specific terminology unchanged
-6. Maintain formal register but avoid robotic perfection
-7. Slightly vary how you connect ideas between sentences
-8. Keep all factual claims and data exactly as written
+Output only the rewritten text.""",
 
-Output ONLY the rewritten text, nothing else.""",
+    "casual": """Rewrite this in a casual, friendly way. Keep same meaning and similar length.
 
-    "casual": """Rewrite this like you're explaining it to a friend. You must:
+Rules:
+- Use contractions (don't, it's, won't, that's)
+- Keep all facts and details the same
+- Use simple everyday words
+- DO NOT add new information
+- DO NOT add explanations
 
-1. Use lots of contractions: don't, it's, won't, that's, I'd, we're
-2. Start sentences with And, But, So, Or sometimes
-3. Use casual phrases: "pretty much", "kind of", "you know", "the thing is"
-4. Break up long sentences into shorter punchy ones
-5. Use simple everyday words
-6. Add occasional filler: "basically", "actually", "honestly"
-7. Keep paragraphs short and readable
-8. Maintain all the original facts and information
+Output only the rewritten text.""",
 
-Output ONLY the rewritten text, nothing else.""",
+    "technical": """Rewrite this technical content clearly. Keep same meaning and length.
 
-    "technical": """Rewrite this technical content clearly while keeping accuracy. You must:
+Rules:
+- Keep ALL technical terms exactly the same
+- Preserve all facts and details
+- Use clear simple language
+- DO NOT add citations or references
+- DO NOT add new information
 
-1. Keep ALL code, commands, file paths, and technical terms exactly unchanged
-2. Use active voice: "Run the command" not "The command should be run"
-3. Vary explanation styles within the text
-4. Use simpler connecting words between technical points
-5. Break complex explanations into shorter sentences
-6. Keep numbered lists and structure if present
-7. Preserve all technical accuracy completely
-
-Output ONLY the rewritten text, nothing else."""
+Output only the rewritten text."""
 }
 
 
@@ -204,30 +195,33 @@ class Paraphraser:
 
 Text to paraphrase:
 {text.strip()}
-
 [/INST]"""
 
         try:
             if progress_callback:
                 progress_callback("Generating paraphrase...")
 
+            # Calculate max tokens based on input length (roughly 1.3x input to allow some flexibility)
+            input_words = len(text.split())
+            # Estimate ~1.3 tokens per word, add 20% buffer
+            dynamic_max_tokens = min(int(input_words * 1.3 * 1.2), self.config.max_tokens)
+            dynamic_max_tokens = max(dynamic_max_tokens, 50)  # Minimum 50 tokens
+
             response = self.model(
                 prompt,
-                max_tokens=self.config.max_tokens,
+                max_tokens=dynamic_max_tokens,
                 temperature=self.config.temperature,
                 top_p=self.config.top_p,
                 top_k=self.config.top_k,
                 repeat_penalty=self.config.repeat_penalty,
-                stop=["</s>", "[INST]"],
+                stop=["</s>", "[INST]", "\n\nReferences:", "\n\nSources:", "\n\n["],
                 echo=False
             )
 
             result = response["choices"][0]["text"].strip()
 
             # Clean up any remaining artifacts
-            result = self._clean_output(result)
-
-            return result if result else text
+            result = self._clean_output(result, text)
 
         except Exception as e:
             if progress_callback:
@@ -263,28 +257,65 @@ Text to paraphrase:
 
         return results
 
-    def _clean_output(self, text: str) -> str:
-        """Clean up model output artifacts."""
-        # Remove common prefixes that models sometimes add
-        prefixes_to_remove = [
-            "Here's the paraphrased text:",
-            "Here is the paraphrased text:",
-            "Paraphrased version:",
-            "Rewritten text:",
-            "Here's the rewritten version:",
-        ]
+    def _clean_output(self, text: str, original: str) -> str:
+        """Clean up model output and validate against original."""
+        import re
 
         result = text.strip()
 
+        # Remove common prefixes that models add
+        prefixes_to_remove = [
+            "here's the paraphrased text:",
+            "here is the paraphrased text:",
+            "paraphrased version:",
+            "rewritten text:",
+            "here's the rewritten version:",
+            "here is the rewritten text:",
+            "the rewritten text:",
+            "rewritten version:",
+            "output:",
+        ]
+
+        result_lower = result.lower()
         for prefix in prefixes_to_remove:
-            if result.lower().startswith(prefix.lower()):
+            if result_lower.startswith(prefix):
                 result = result[len(prefix):].strip()
+                result_lower = result.lower()
 
         # Remove surrounding quotes if present
         if result.startswith('"') and result.endswith('"'):
             result = result[1:-1]
 
-        return result
+        # Remove fake citations/references that LLM might add
+        # Pattern: (Author et al., YYYY) or [1], [2], etc.
+        result = re.sub(r'\([A-Z][a-z]+\s+et\s+al\.,?\s*\d{4}\)', '', result)
+        result = re.sub(r'\[[0-9]+\]', '', result)
+        result = re.sub(r'\([\w\s&]+,\s*\d{4}\)', '', result)
+
+        # Remove "References:" sections and anything after
+        ref_patterns = [
+            r'\n\s*References:.*',
+            r'\n\s*Sources:.*',
+            r'\n\s*Citations:.*',
+            r'\n\s*Bibliography:.*',
+        ]
+        for pattern in ref_patterns:
+            result = re.sub(pattern, '', result, flags=re.IGNORECASE | re.DOTALL)
+
+        # If output is way too long compared to input, truncate
+        orig_words = len(original.split())
+        result_words = len(result.split())
+
+        if result_words > orig_words * 1.5:
+            # Output is too long, truncate to similar length
+            words = result.split()
+            result = ' '.join(words[:int(orig_words * 1.2)])
+
+        # If result is too short or empty, return original
+        if not result.strip() or result_words < orig_words * 0.3:
+            return original
+
+        return result.strip()
 
     def get_available_styles(self) -> List[str]:
         """Return list of available paraphrasing styles."""
