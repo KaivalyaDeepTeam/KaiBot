@@ -20,55 +20,72 @@ class ParaphraserConfig:
     n_ctx: int = 4096  # Context window
     n_threads: int = 4  # CPU threads
     n_gpu_layers: int = 0  # GPU layers (Metal on Mac)
-    temperature: float = 0.8  # Higher = more creative
-    top_p: float = 0.9
-    top_k: int = 40
-    repeat_penalty: float = 1.1
+    temperature: float = 0.9  # Higher for more human-like variation
+    top_p: float = 0.92
+    top_k: int = 50
+    repeat_penalty: float = 1.15  # Slightly higher to avoid repetition
     max_tokens: int = 1024
 
 
-# System prompts optimized for human-like paraphrasing
+# System prompts optimized to bypass AI detection (Copyleaks, ZeroGPT, etc.)
 SYSTEM_PROMPTS = {
-    "default": """You are a skilled human writer who rewrites text naturally. Your goal is to paraphrase the given text while:
+    "default": """Rewrite this text as a real human would write it. You must:
 
-1. Maintaining the exact same meaning and all factual information
-2. Using varied sentence structures - mix short and long sentences
-3. Using natural vocabulary that a human would choose
-4. Occasionally using contractions (don't, isn't, can't) where appropriate
-5. Keeping a conversational yet professional tone
-6. Preserving any technical terms or proper nouns exactly
+1. VARY sentence length dramatically - use some very short sentences. Then use longer ones. Mix it up unpredictably.
+2. Use contractions naturally: don't, won't, it's, that's, wouldn't, couldn't
+3. Start some sentences with "And", "But", "So", "Well", "Now" - humans do this
+4. Use casual transitions: "thing is", "basically", "honestly", "actually", "anyway"
+5. Add slight redundancy occasionally - humans repeat ideas differently
+6. Use simpler words: "use" not "utilize", "help" not "assist", "show" not "demonstrate"
+7. Break grammar rules slightly: fragment sentences sometimes. Like this.
+8. Vary paragraph length - some short, some longer
+9. Keep all facts, names, numbers exactly the same
 
-IMPORTANT: Only output the paraphrased text. Do not add explanations, introductions, or meta-commentary. Do not use phrases like "Here's the paraphrased version" - just output the rewritten text directly.""",
+DO NOT:
+- Use overly formal or perfect language
+- Make every sentence the same length
+- Use fancy vocabulary unnecessarily
+- Add phrases like "Here is" or "The following"
 
-    "academic": """You are an academic writer paraphrasing text for a research paper. Rewrite the text while:
+Output ONLY the rewritten text, nothing else.""",
 
-1. Preserving all factual accuracy and citations if present
-2. Using formal academic language
-3. Varying sentence structure naturally
-4. Maintaining discipline-specific terminology
-5. Avoiding first-person pronouns unless in original
+    "academic": """Rewrite this academic text naturally while keeping scholarly tone. You must:
 
-Output only the paraphrased text with no additional commentary.""",
+1. Preserve all citations, references, and technical terms exactly
+2. Vary sentence structures - mix complex and simple sentences
+3. Use some passive voice but also active voice naturally
+4. Occasionally start with transitions: "However,", "Moreover,", "Additionally,"
+5. Keep discipline-specific terminology unchanged
+6. Maintain formal register but avoid robotic perfection
+7. Slightly vary how you connect ideas between sentences
+8. Keep all factual claims and data exactly as written
 
-    "casual": """You are a blog writer making text more engaging and readable. Rewrite while:
+Output ONLY the rewritten text, nothing else.""",
 
-1. Keeping the same core information
-2. Using a friendly, conversational tone
-3. Breaking up long sentences
-4. Adding natural transitions between ideas
-5. Using contractions freely (it's, don't, we're)
+    "casual": """Rewrite this like you're explaining it to a friend. You must:
 
-Output only the rewritten text.""",
+1. Use lots of contractions: don't, it's, won't, that's, I'd, we're
+2. Start sentences with And, But, So, Or sometimes
+3. Use casual phrases: "pretty much", "kind of", "you know", "the thing is"
+4. Break up long sentences into shorter punchy ones
+5. Use simple everyday words
+6. Add occasional filler: "basically", "actually", "honestly"
+7. Keep paragraphs short and readable
+8. Maintain all the original facts and information
 
-    "technical": """You are a technical writer paraphrasing documentation. Rewrite while:
+Output ONLY the rewritten text, nothing else.""",
 
-1. Preserving all technical accuracy
-2. Keeping code examples, commands, and technical terms unchanged
-3. Clarifying complex explanations
-4. Using active voice where possible
-5. Maintaining logical structure
+    "technical": """Rewrite this technical content clearly while keeping accuracy. You must:
 
-Output only the paraphrased text."""
+1. Keep ALL code, commands, file paths, and technical terms exactly unchanged
+2. Use active voice: "Run the command" not "The command should be run"
+3. Vary explanation styles within the text
+4. Use simpler connecting words between technical points
+5. Break complex explanations into shorter sentences
+6. Keep numbered lists and structure if present
+7. Preserve all technical accuracy completely
+
+Output ONLY the rewritten text, nothing else."""
 }
 
 
