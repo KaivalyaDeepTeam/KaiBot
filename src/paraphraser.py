@@ -20,63 +20,73 @@ class ParaphraserConfig:
     n_ctx: int = 4096  # Context window
     n_threads: int = 4  # CPU threads
     n_gpu_layers: int = 0  # GPU layers (Metal on Mac)
-    temperature: float = 0.7  # Balanced for natural but controlled output
-    top_p: float = 0.9
-    top_k: int = 40
-    repeat_penalty: float = 1.1
-    max_tokens: int = 512  # Limit output length to prevent rambling
+    temperature: float = 0.85  # Higher for more human-like variation
+    top_p: float = 0.92
+    top_k: int = 50
+    repeat_penalty: float = 1.15  # Penalize repetition more
+    max_tokens: int = 1024  # Allow longer outputs
 
 
 # System prompts optimized to bypass AI detection (Copyleaks, ZeroGPT, etc.)
 SYSTEM_PROMPTS = {
-    "default": """Rewrite the following text in your own words. Keep the same meaning but change how it's written.
+    "default": """Rewrite this text like a human blogger would write it. Make it sound natural and conversational.
 
-Rules:
-- Keep the SAME length (similar word count)
-- Keep ALL facts, names, numbers, and details exactly
-- Mix short and long sentences naturally
-- Use contractions sometimes (don't, it's, won't)
-- Use simple everyday words
-- DO NOT add any new information
-- DO NOT add citations or references
-- DO NOT add explanations or commentary
-- DO NOT start with phrases like "Here is" or "The text"
+You MUST:
+- Change sentence structures completely - don't keep the same pattern
+- Use contractions everywhere: don't, won't, it's, that's, you've, they're, can't, isn't
+- Start some sentences with And, But, So, Or, Well, Now, Look, See, Thing is
+- Mix very short sentences with longer ones. Like this. Then write a longer one that flows naturally.
+- Use casual phrases: pretty much, kind of, a lot of, tons of, bunch of, really, actually, basically, honestly
+- Replace formal words: use "get" not "obtain", "help" not "assist", "show" not "demonstrate", "use" not "utilize", "about" not "approximately", "big" not "substantial"
+- Add filler words occasionally: just, really, actually, probably, maybe, quite, pretty
+- Keep all facts, numbers, and names exactly the same
+- Keep similar length to original
 
-Just output the rewritten text directly.""",
+DO NOT:
+- Add citations, references, or sources
+- Add new information not in original
+- Use overly formal or academic language
+- Write "Here is" or any meta-commentary
 
-    "academic": """Rewrite this text academically but naturally. Keep exact same meaning and length.
+Write the rewritten text directly:""",
 
-Rules:
-- Preserve all facts, terms, and details exactly
-- Keep similar word count to original
+    "academic": """Rewrite this academic text naturally while keeping scholarly tone.
+
+You MUST:
+- Restructure sentences - don't keep same patterns
+- Vary between active and passive voice naturally
+- Use transitions: However, Moreover, Additionally, Furthermore, In addition, That said
+- Mix complex sentences with simpler ones for readability
+- Keep all facts, data, citations, and technical terms exactly
+- Maintain formal register but sound like a human researcher wrote it
+
+DO NOT add fake citations or references. Keep similar length.
+
+Write the rewritten text:""",
+
+    "casual": """Rewrite this like you're chatting with a friend. Super casual and natural.
+
+You MUST:
+- Use tons of contractions: don't, it's, won't, that's, I'd, we're, they've, can't
+- Start sentences with And, But, So, Or, Anyway, Look, Thing is
+- Use casual phrases: pretty much, kind of, you know, I mean, honestly, basically
+- Keep sentences punchy. Short works. Then mix in longer ones when needed.
+- Use simple words everyone knows
+- Keep all the facts and details the same
+
+Write it like a real person talking:""",
+
+    "technical": """Rewrite this technical content clearly and naturally.
+
+You MUST:
+- Keep ALL technical terms, code, commands, and specifications exactly unchanged
+- Use active voice: "Run the command" not "The command should be run"
+- Break complex explanations into digestible pieces
+- Use simple connecting words: then, next, after that, once done
 - Vary sentence structure naturally
-- DO NOT add citations, references, or sources
-- DO NOT add new information
-- DO NOT add commentary
+- Keep all accuracy and details
 
-Output only the rewritten text.""",
-
-    "casual": """Rewrite this in a casual, friendly way. Keep same meaning and similar length.
-
-Rules:
-- Use contractions (don't, it's, won't, that's)
-- Keep all facts and details the same
-- Use simple everyday words
-- DO NOT add new information
-- DO NOT add explanations
-
-Output only the rewritten text.""",
-
-    "technical": """Rewrite this technical content clearly. Keep same meaning and length.
-
-Rules:
-- Keep ALL technical terms exactly the same
-- Preserve all facts and details
-- Use clear simple language
-- DO NOT add citations or references
-- DO NOT add new information
-
-Output only the rewritten text."""
+Write the rewritten technical content:"""
 }
 
 
@@ -201,11 +211,11 @@ Text to paraphrase:
             if progress_callback:
                 progress_callback("Generating paraphrase...")
 
-            # Calculate max tokens based on input length (roughly 1.3x input to allow some flexibility)
+            # Calculate max tokens based on input length
             input_words = len(text.split())
-            # Estimate ~1.3 tokens per word, add 20% buffer
-            dynamic_max_tokens = min(int(input_words * 1.3 * 1.2), self.config.max_tokens)
-            dynamic_max_tokens = max(dynamic_max_tokens, 50)  # Minimum 50 tokens
+            # Estimate ~1.5 tokens per word, add 30% buffer for natural variation
+            dynamic_max_tokens = min(int(input_words * 1.5 * 1.3), self.config.max_tokens)
+            dynamic_max_tokens = max(dynamic_max_tokens, 100)  # Minimum 100 tokens
 
             response = self.model(
                 prompt,
