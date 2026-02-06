@@ -1,14 +1,17 @@
-# KaiBot - AI PDF Paraphraser
+# KaiBot - AI Humanizer & PDF Paraphraser
 
-A macOS desktop application that paraphrases PDF content using local LLMs to produce human-like text that bypasses AI detection tools like Copyleaks and ZeroGPT.
+A powerful macOS desktop application that humanizes AI-generated text and paraphrases PDFs using local LLMs. Designed to bypass AI detection tools like Copyleaks and ZeroGPT.
 
 ## Features
 
-- **Local LLM Processing** - Uses Mistral 7B via llama.cpp (no cloud API needed)
-- **Layout Preservation** - Maintains original PDF structure, images, tables, and formatting
-- **Multiple Styles** - Default, Academic, Casual, and Technical paraphrasing modes
+- **Text Humanizer** - Paste text and get human-like output instantly (like Copyleaks AI Humanizer)
+- **PDF Paraphraser** - Process entire PDFs while preserving layout
+- **Local LLM Processing** - Uses Mistral 7B via llama.cpp (no cloud API, 100% private)
+- **Multiple Styles** - Default, Academic, Casual, and Technical modes
 - **GPU Acceleration** - Metal support on Apple Silicon Macs
-- **Drag & Drop** - Simple interface for processing PDFs
+- **Copy to Clipboard** - One-click copy for humanized text
+- **Word Count Tracking** - Monitor input/output word counts
+- **Drag & Drop** - Simple PDF processing interface
 
 ## Requirements
 
