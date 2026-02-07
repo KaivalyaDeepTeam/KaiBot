@@ -17,81 +17,180 @@ except ImportError:
 class ParaphraserConfig:
     """Configuration for the paraphraser."""
     model_path: str = ""
-    n_ctx: int = 4096  # Context window
+    n_ctx: int = 8192  # Larger context window for chat
     n_threads: int = 4  # CPU threads
     n_gpu_layers: int = 0  # GPU layers (Metal on Mac)
-    temperature: float = 0.85  # Higher for more human-like variation
-    top_p: float = 0.92
-    top_k: int = 50
-    repeat_penalty: float = 1.15  # Penalize repetition more
-    max_tokens: int = 1024  # Allow longer outputs
+    temperature: float = 0.7  # Balanced creativity
+    top_p: float = 0.9
+    top_k: int = 40
+    repeat_penalty: float = 1.1  # Slight repetition penalty
+    max_tokens: int = 4096  # Allow much longer outputs for generation
 
 
-# System prompts optimized to bypass AI detection (Copyleaks, ZeroGPT, etc.)
+# System prompts - focused modes that transform vocabulary and style
 SYSTEM_PROMPTS = {
-    "default": """Rewrite like a human blogger. Sound natural and casual.
+    "professional": """Transform this text into professional, business-appropriate language.
 
-MUST DO:
-- Contractions everywhere: don't, it's, won't, that's, can't, isn't, you're, they're
-- Start some sentences with And, But, So
-- Mix short and long sentences. Like this. Then a longer flowing one.
-- Simple words: get not obtain, use not utilize, help not assist, show not demonstrate, buy not purchase, need not require
-- Keep all facts and numbers exactly the same
+VOCABULARY CHANGES (apply these transformations):
+- "Hi" → "Hello" or "Greetings"
+- "Hey" → "Hello"
+- "ain't" → "is not" / "are not"
+- "gonna" → "going to"
+- "wanna" → "want to"
+- "gotta" → "have to" / "need to"
+- "kinda" → "somewhat" / "rather"
+- "sorta" → "somewhat"
+- "yeah" → "yes"
+- "nope" → "no"
+- "cool" → "excellent" / "acceptable"
+- "awesome" → "impressive" / "excellent"
+- "stuff" → "materials" / "items" / "matters"
+- "things" → "items" / "aspects" / "elements"
+- "get" → "obtain" / "receive" / "acquire"
+- "a lot" → "significantly" / "considerably"
+- "pretty much" → "essentially" / "largely"
+- "kind of" → "somewhat" / "to some extent"
+- Remove excessive exclamation marks
 
-NEVER USE:
-- Dashes or semicolons
-- Words: crucial, essential, additionally, furthermore, consequently, comprehensive, utilizing, facilitate, implement, significant, substantial
-- Phrases: it's important to note, it's worth noting, in order to, due to the fact, at the end of the day
-- Any citations or references
+PRESERVE EXACTLY: All names, facts, numbers, dates, core information.
 
-Output the rewrite only:""",
+STYLE:
+- Professional vocabulary throughout
+- Clear, precise language
+- Proper sentence structure
+- Active voice preferred
+- No slang, contractions, or casual expressions
 
-    "academic": """Rewrite this academic text while keeping scholarly tone.
+Output the professional rewrite only:""",
 
-MUST DO:
-- Restructure sentences differently
-- Vary active and passive voice
-- Keep all facts, data, citations, and technical terms exactly
-- Sound like a human researcher wrote it
+    "conversational": """Transform this text into casual, friendly language like talking to a friend.
 
-NEVER USE:
-- Dashes or semicolons
-- Fake citations
-- Overly flowery language
+VOCABULARY CHANGES (apply these transformations):
+- "Hello" → "Hi" or "Hey"
+- "Greetings" → "Hi there"
+- "is not" → "isn't"
+- "are not" → "aren't"
+- "will not" → "won't"
+- "cannot" → "can't"
+- "going to" → "gonna"
+- "want to" → "wanna"
+- "have to" → "gotta"
+- "excellent" → "awesome" / "cool"
+- "impressive" → "amazing"
+- "obtain" → "get"
+- "receive" → "get"
+- "utilize" → "use"
+- "therefore" → "so"
+- "however" → "but"
+- "additionally" → "also" / "plus"
+- "regarding" → "about"
+- "approximately" → "about" / "around"
 
-Output the rewrite only:""",
+PRESERVE EXACTLY: All names, facts, numbers, dates - core story stays the same.
 
-    "casual": """Rewrite super casually, like texting a friend.
+STYLE:
+- Use contractions throughout
+- Start some sentences with And, But, So, Well
+- Add casual phrases: "pretty much", "kind of", "basically", "honestly", "you know"
+- Short punchy sentences
+- Friendly, relaxed tone
 
-MUST DO:
-- Tons of contractions: don't, it's, won't, that's, can't, you're
-- Start sentences with And, But, So, Or, Anyway
-- Casual words: pretty much, kind of, basically, honestly, really, actually
-- Short punchy sentences mixed with longer ones
-- Keep all facts the same
+Output the casual rewrite only:""",
 
-NEVER USE:
-- Dashes or semicolons
-- Formal words
-- Academic language
+    "scholarly": """Transform this text into formal academic writing style.
 
-Output the rewrite only:""",
+VOCABULARY CHANGES (apply these transformations):
+- "show" → "demonstrate" / "illustrate"
+- "use" → "utilize" / "employ"
+- "get" → "obtain" / "acquire"
+- "look at" → "examine" / "analyze"
+- "find out" → "determine" / "ascertain"
+- "think" → "posit" / "hypothesize" / "consider"
+- "big" → "substantial" / "significant"
+- "a lot" → "numerous" / "substantial"
+- "good" → "favorable" / "positive" / "beneficial"
+- "bad" → "adverse" / "negative" / "detrimental"
+- Remove all contractions
+- Remove casual expressions
 
-    "technical": """Rewrite this technical content clearly.
+PRESERVE EXACTLY: All names, data, citations, technical terms, dates, numbers.
 
-MUST DO:
-- Keep ALL technical terms, code, commands exactly unchanged
-- Active voice: "Run the command" not "The command should be run"
-- Simple connecting words: then, next, after that
-- Vary sentence length
+STYLE:
+- Formal academic tone
+- Third person perspective when possible
+- Proper scholarly structure
+- Mix of active and passive voice
+- No informal language or contractions
 
-NEVER USE:
-- Dashes or semicolons
-- Flowery language
-- Unnecessary filler
+Output the scholarly rewrite only:""",
 
-Output the rewrite only:"""
+    "creative": """Transform this text into vivid, engaging creative writing.
+
+VOCABULARY CHANGES (apply these transformations):
+- Replace plain verbs with vivid ones: "walked" → "strolled/strode/ambled"
+- Replace basic adjectives with evocative ones: "big" → "massive/towering/enormous"
+- Add sensory details and imagery
+- Use metaphors and comparisons where natural
+- Replace "said" with varied dialogue tags when appropriate
+- Transform passive descriptions into active scenes
+
+PRESERVE EXACTLY: All names, places, dates, numbers, events, facts.
+
+STYLE:
+- Vivid, engaging word choices
+- Varied sentence structures and lengths
+- Create rhythm and flow
+- Show don't tell
+- Make it memorable and immersive
+
+Output the creative rewrite only:""",
+
+    "concise": """Make this text shorter and more direct while keeping all essential meaning.
+
+TRANSFORMATIONS:
+- Remove filler words: "really", "very", "quite", "just", "actually", "basically"
+- Remove redundant phrases: "in order to" → "to", "at this point in time" → "now"
+- Combine related sentences
+- Remove unnecessary modifiers
+- Cut wordy expressions: "due to the fact that" → "because"
+- Remove excessive examples (keep only the best one)
+
+PRESERVE: All important names, facts, numbers, dates.
+
+TARGET: Roughly half the original length while keeping meaning intact.
+
+Output the shortened text only:""",
 }
+
+# Chat/Generation prompt - optimized for direct, complete responses like ChatGPT
+CHAT_SYSTEM_PROMPT = """You are a highly capable AI assistant. Your job is to IMMEDIATELY and FULLY complete whatever the user asks.
+
+CRITICAL RULES:
+1. ALWAYS provide complete, finished work - never outlines, summaries, or partial responses
+2. NEVER ask clarifying questions unless absolutely necessary - just do the task
+3. When asked to write something, WRITE IT IN FULL - not an outline
+4. When asked for code, provide COMPLETE, WORKING code
+5. Be thorough and detailed - users want comprehensive responses
+6. Start working immediately - don't explain what you're going to do
+
+For writing requests (articles, essays, stories):
+- Write the COMPLETE text, not an outline
+- Include all requested word count or content
+- Use engaging, polished prose
+- Structure with proper paragraphs and flow
+
+For code requests:
+- Provide complete, runnable code
+- Include necessary imports and setup
+- Add helpful comments
+- Handle edge cases
+
+For questions:
+- Give direct, comprehensive answers
+- Don't hedge unnecessarily
+- Be confident and helpful
+
+Remember: Users want RESULTS, not plans. Complete the task fully."""
 
 
 class Paraphraser:
@@ -202,7 +301,7 @@ class Paraphraser:
             return text
 
         style = style or self.current_style
-        system_prompt = SYSTEM_PROMPTS.get(style, SYSTEM_PROMPTS["default"])
+        system_prompt = SYSTEM_PROMPTS.get(style, SYSTEM_PROMPTS["professional"])
 
         # Construct the prompt using Qwen ChatML format
         prompt = f"""<|im_start|>system
@@ -337,6 +436,65 @@ class Paraphraser:
     def get_available_styles(self) -> List[str]:
         """Return list of available paraphrasing styles."""
         return list(SYSTEM_PROMPTS.keys())
+
+    def chat(
+        self,
+        message: str,
+        conversation_history: Optional[List[dict]] = None,
+        progress_callback: Optional[Callable[[str], None]] = None
+    ) -> str:
+        """
+        Direct chat/generation with conversation memory.
+
+        Args:
+            message: User's current request or question
+            conversation_history: List of {"role": "user"/"assistant", "content": "..."} dicts
+            progress_callback: Called with status updates
+
+        Returns:
+            Generated response
+        """
+        if not self.is_loaded or not self.model:
+            return "Error: Model not loaded"
+
+        if not message or not message.strip():
+            return ""
+
+        # Build prompt with conversation history
+        prompt = f"<|im_start|>system\n{CHAT_SYSTEM_PROMPT}<|im_end|>\n"
+
+        # Add conversation history
+        if conversation_history:
+            for msg in conversation_history:
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                prompt += f"<|im_start|>{role}\n{content}<|im_end|>\n"
+
+        # Add current message
+        prompt += f"<|im_start|>user\n{message.strip()}<|im_end|>\n<|im_start|>assistant\n"
+
+        try:
+            if progress_callback:
+                progress_callback("Generating response...")
+
+            response = self.model(
+                prompt,
+                max_tokens=self.config.max_tokens,
+                temperature=self.config.temperature,
+                top_p=self.config.top_p,
+                top_k=self.config.top_k,
+                repeat_penalty=self.config.repeat_penalty,
+                stop=["<|im_end|>", "<|im_start|>"],
+                echo=False
+            )
+
+            result = response["choices"][0]["text"].strip()
+            return result
+
+        except Exception as e:
+            if progress_callback:
+                progress_callback(f"Error: {e}")
+            return f"Error: {str(e)}"
 
     def update_config(self, **kwargs):
         """Update configuration parameters."""

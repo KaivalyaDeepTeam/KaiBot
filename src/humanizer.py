@@ -34,6 +34,7 @@ class HumanizerConfig:
     top_k: int = 60
     repeat_penalty: float = 1.2
     max_tokens: int = 512
+    creativity_level: int = 50  # 0-100, controls aggressiveness of humanization
 
 
 # Optimized prompts - specific about what TO DO and NOT TO DO
@@ -314,6 +315,34 @@ class Humanizer:
         self.config = config or HumanizerConfig()
         self.model: Optional[Llama] = None
         self.is_loaded = False
+        self._creativity_level = self.config.creativity_level
+
+    @property
+    def creativity_level(self) -> int:
+        """Get current creativity level (0-100)."""
+        return self._creativity_level
+
+    @creativity_level.setter
+    def creativity_level(self, value: int):
+        """Set creativity level (0-100)."""
+        self._creativity_level = max(0, min(100, value))
+        self.config.creativity_level = self._creativity_level
+
+    def get_effective_temperature(self) -> float:
+        """Calculate temperature based on creativity level."""
+        # Low creativity (0): temp 0.5, High creativity (100): temp 1.2
+        base_temp = 0.5 + (self._creativity_level / 100) * 0.7
+        return base_temp
+
+    def get_substitution_rate(self) -> float:
+        """Calculate word substitution rate based on creativity level."""
+        # Low creativity (0): 30%, High creativity (100): 100%
+        return 0.3 + (self._creativity_level / 100) * 0.7
+
+    def get_quirk_intensity(self) -> float:
+        """Calculate human quirk intensity based on creativity level."""
+        # Low creativity (0): 0.3x, High creativity (100): 1.5x
+        return 0.3 + (self._creativity_level / 100) * 1.2
 
     def load_model(
         self,
@@ -461,10 +490,13 @@ class Humanizer:
 <|im_start|>assistant
 """
 
+            # Use creativity-based temperature
+            effective_temp = self.get_effective_temperature() + random.uniform(-0.1, 0.15)
+
             response = self.model(
                 prompt,
                 max_tokens=min(len(para.split()) * 4, self.config.max_tokens),
-                temperature=self.config.temperature + random.uniform(-0.1, 0.15),
+                temperature=effective_temp,
                 top_p=self.config.top_p,
                 top_k=self.config.top_k,
                 repeat_penalty=self.config.repeat_penalty,
@@ -531,6 +563,7 @@ class Humanizer:
     def _substitute_words(self, text: str) -> str:
         """Stage 3: Replace formal/AI words with casual alternatives."""
         result = text
+        substitution_rate = self.get_substitution_rate()
 
         for formal, casual_list in WORD_SUBSTITUTIONS.items():
             # Match whole words only, case insensitive
@@ -543,8 +576,8 @@ class Humanizer:
                     return replacement.capitalize()
                 return replacement
 
-            # Only replace sometimes (70% chance) to maintain variety
-            if random.random() < 0.7:
+            # Use creativity-based substitution rate
+            if random.random() < substitution_rate:
                 result = pattern.sub(replace_match, result)
 
         return result
@@ -722,36 +755,37 @@ class Humanizer:
         """Stage 6: Add human writing quirks."""
         sentences = self._split_sentences(text)
         result_sentences = []
+        quirk_intensity = self.get_quirk_intensity()
 
         for i, sentence in enumerate(sentences):
             sentence = sentence.strip()
             if not sentence:
                 continue
 
-            # 15% chance: Add a casual sentence starter
-            if i > 0 and random.random() < 0.15:
+            # Chance for casual sentence starter (base 15%, scaled by intensity)
+            if i > 0 and random.random() < 0.15 * quirk_intensity:
                 starter = random.choice(CASUAL_TRANSITIONS)
                 if not any(sentence.startswith(s) for s in CASUAL_TRANSITIONS + HUMAN_STARTERS):
                     sentence = starter + sentence[0].lower() + sentence[1:]
 
-            # 10% chance: Add parenthetical aside
-            if random.random() < 0.10 and len(sentence.split()) > 8:
+            # Chance for parenthetical aside (base 10%, scaled by intensity)
+            if random.random() < 0.10 * quirk_intensity and len(sentence.split()) > 8:
                 aside = random.choice(PARENTHETICAL_ASIDES)
                 words = sentence.split()
                 insert_pos = random.randint(len(words)//3, 2*len(words)//3)
                 words.insert(insert_pos, aside)
                 sentence = ' '.join(words)
 
-            # 8% chance: Insert filler word
-            if random.random() < 0.08 and len(sentence.split()) > 5:
+            # Chance for filler word (base 8%, scaled by intensity)
+            if random.random() < 0.08 * quirk_intensity and len(sentence.split()) > 5:
                 filler = random.choice(HUMAN_FILLERS)
                 words = sentence.split()
                 insert_pos = random.randint(1, min(3, len(words)-1))
                 words.insert(insert_pos, filler + ",")
                 sentence = ' '.join(words)
 
-            # 5% chance: Add rhetorical question
-            if random.random() < 0.05 and i > 0:
+            # Chance for rhetorical question (base 5%, scaled by intensity)
+            if random.random() < 0.05 * quirk_intensity and i > 0:
                 questions = [
                     "Right?",
                     "Makes sense?",
@@ -762,8 +796,8 @@ class Humanizer:
                 ]
                 sentence = sentence + " " + random.choice(questions)
 
-            # 5% chance: Add a very short punchy sentence before
-            if random.random() < 0.05 and i > 0:
+            # Chance for punchy sentence (base 5%, scaled by intensity)
+            if random.random() < 0.05 * quirk_intensity and i > 0:
                 punchy = random.choice([
                     "Here's the thing.",
                     "Think about it.",

@@ -1,0 +1,75 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Primary gradient matching LocalMind -->
+    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5"/>
+      <stop offset="100%" style="stop-color:#7C3AED"/>
+    </linearGradient>
+
+    <!-- Inner circle gradient -->
+    <linearGradient id="innerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1"/>
+      <stop offset="100%" style="stop-color:#8B5CF6"/>
+    </linearGradient>
+
+    <!-- Glow effect -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="128" cy="128" r="120" fill="url(#primaryGradient)"/>
+
+  <!-- Inner circle for depth -->
+  <circle cx="128" cy="128" r="95" fill="url(#innerGradient)"/>
+
+  <!-- Neural network nodes (AI brain pattern) -->
+  <!-- Center node -->
+  <circle cx="128" cy="128" r="20" fill="white"/>
+
+  <!-- Outer nodes -->
+  <circle cx="128" cy="55" r="12" fill="white" opacity="0.9"/>
+  <circle cx="128" cy="201" r="12" fill="white" opacity="0.9"/>
+  <circle cx="55" cy="128" r="12" fill="white" opacity="0.9"/>
+  <circle cx="201" cy="128" r="12" fill="white" opacity="0.9"/>
+
+  <!-- Diagonal nodes -->
+  <circle cx="75" cy="75" r="10" fill="white" opacity="0.8"/>
+  <circle cx="181" cy="75" r="10" fill="white" opacity="0.8"/>
+  <circle cx="75" cy="181" r="10" fill="white" opacity="0.8"/>
+  <circle cx="181" cy="181" r="10" fill="white" opacity="0.8"/>
+
+  <!-- Neural connections -->
+  <line x1="128" y1="108" x2="128" y2="67" stroke="white" stroke-width="3" opacity="0.7"/>
+  <line x1="128" y1="148" x2="128" y2="189" stroke="white" stroke-width="3" opacity="0.7"/>
+  <line x1="108" y1="128" x2="67" y2="128" stroke="white" stroke-width="3" opacity="0.7"/>
+  <line x1="148" y1="128" x2="189" y2="128" stroke="white" stroke-width="3" opacity="0.7"/>
+
+  <!-- Diagonal connections -->
+  <line x1="114" y1="114" x2="85" y2="85" stroke="white" stroke-width="2" opacity="0.6"/>
+  <line x1="142" y1="114" x2="171" y2="85" stroke="white" stroke-width="2" opacity="0.6"/>
+  <line x1="114" y1="142" x2="85" y2="171" stroke="white" stroke-width="2" opacity="0.6"/>
+  <line x1="142" y1="142" x2="171" y2="171" stroke="white" stroke-width="2" opacity="0.6"/>
+
+  <!-- Writing pen element (replacing sound waves) -->
+  <g transform="translate(128, 128)" filter="url(#glow)">
+    <!-- Pen body -->
+    <path d="M -8 -5 L 25 -5 L 25 5 L -8 5 Z" fill="white" opacity="0.9" transform="rotate(-45)"/>
+    <!-- Pen tip -->
+    <path d="M 25 -5 L 38 0 L 25 5 Z" fill="#10B981" transform="rotate(-45)"/>
+    <!-- Pen top -->
+    <rect x="-15" y="-4" width="8" height="8" rx="1" fill="white" opacity="0.8" transform="rotate(-45)"/>
+  </g>
+
+  <!-- Writing lines (representing text/writing) -->
+  <g opacity="0.7">
+    <path d="M 165 175 Q 180 170, 195 175" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M 170 185 Q 185 180, 200 185" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M 175 195 Q 188 190, 200 195" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
